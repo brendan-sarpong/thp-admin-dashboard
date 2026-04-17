@@ -1,5 +1,10 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { createImageAction, deleteImageAction } from "./actions";
+import {
+  createImageAction,
+  deleteImageAction,
+  updateImageUrlAction,
+  uploadImageFileAction,
+} from "./actions";
 
 type Props = { searchParams?: Promise<{ error?: string }> };
 
@@ -22,7 +27,35 @@ export default async function AdminImagesPage({ searchParams }: Props) {
       )}
 
       <section className="space-y-2">
-        <h2 className="text-lg font-medium">Add image</h2>
+        <h2 className="text-lg font-medium">Upload file</h2>
+        <p className="text-xs text-zinc-500">
+          Uses Supabase Storage bucket from{" "}
+          <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">SUPABASE_IMAGE_BUCKET</code>{" "}
+          (falls back to <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">images</code>).
+        </p>
+        <form
+          action={uploadImageFileAction}
+          encType="multipart/form-data"
+          className="flex flex-wrap items-end gap-2"
+        >
+          <input
+            name="file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            required
+            className="max-w-xs text-sm"
+          />
+          <button
+            type="submit"
+            className="rounded bg-zinc-900 px-3 py-1.5 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900"
+          >
+            Upload
+          </button>
+        </form>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-medium">Add image by URL</h2>
         <form action={createImageAction} className="flex flex-wrap items-end gap-2">
           <label className="flex flex-col gap-1 text-sm">
             <span>URL</span>
@@ -56,6 +89,7 @@ export default async function AdminImagesPage({ searchParams }: Props) {
               <th className="px-3 py-2 font-medium">id</th>
               <th className="px-3 py-2 font-medium">url</th>
               <th className="px-3 py-2 font-medium">user_id</th>
+              <th className="px-3 py-2 font-medium">edit</th>
               <th className="px-3 py-2 font-medium"> </th>
             </tr>
           </thead>
@@ -72,6 +106,24 @@ export default async function AdminImagesPage({ searchParams }: Props) {
                   </a>
                 </td>
                 <td className="px-3 py-2 font-mono text-xs">{row.user_id}</td>
+                <td className="px-3 py-2 align-top">
+                  <form action={updateImageUrlAction} className="flex flex-col gap-1">
+                    <input type="hidden" name="id" value={row.id} />
+                    <input
+                      name="url"
+                      type="url"
+                      defaultValue={row.url}
+                      required
+                      className="w-48 max-w-full rounded border border-zinc-300 px-1 py-0.5 text-xs dark:border-zinc-600 dark:bg-zinc-900"
+                    />
+                    <button
+                      type="submit"
+                      className="w-fit rounded border border-zinc-300 px-2 py-0.5 text-xs dark:border-zinc-600"
+                    >
+                      Save URL
+                    </button>
+                  </form>
+                </td>
                 <td className="px-3 py-2">
                   <form action={deleteImageAction}>
                     <input type="hidden" name="id" value={row.id} />
@@ -87,7 +139,7 @@ export default async function AdminImagesPage({ searchParams }: Props) {
             ))}
             {!error && (images ?? []).length === 0 && (
               <tr>
-                <td colSpan={4} className="px-3 py-4 text-zinc-500">
+                <td colSpan={5} className="px-3 py-4 text-zinc-500">
                   No images found.
                 </td>
               </tr>

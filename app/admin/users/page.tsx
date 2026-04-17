@@ -4,7 +4,7 @@ export default async function AdminUsersPage() {
   const supabase = await createServerSupabaseClient();
   const { data: profiles, error } = await supabase
     .from("profiles")
-    .select("id, is_superadmin")
+    .select("id, is_superadmin, is_matrix_admin")
     .order("id", { ascending: true });
 
   return (
@@ -27,6 +27,7 @@ export default async function AdminUsersPage() {
             <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
               <th className="px-3 py-2 font-medium">id</th>
               <th className="px-3 py-2 font-medium">is_superadmin</th>
+              <th className="px-3 py-2 font-medium">is_matrix_admin</th>
             </tr>
           </thead>
           <tbody>
@@ -37,11 +38,12 @@ export default async function AdminUsersPage() {
               >
                 <td className="px-3 py-2 font-mono text-xs">{row.id}</td>
                 <td className="px-3 py-2">{row.is_superadmin ? "true" : "false"}</td>
+                <td className="px-3 py-2">{row.is_matrix_admin ? "true" : "false"}</td>
               </tr>
             ))}
             {!error && (profiles ?? []).length === 0 && (
               <tr>
-                <td colSpan={2} className="px-3 py-4 text-zinc-500">
+                <td colSpan={3} className="px-3 py-4 text-zinc-500">
                   No profiles found.
                 </td>
               </tr>

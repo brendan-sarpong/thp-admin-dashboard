@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { canUseMatrixTool } from "@/lib/access";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 export default async function Home() {
@@ -11,12 +12,15 @@ export default async function Home() {
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("is_superadmin")
+      .select("is_superadmin, is_matrix_admin")
       .eq("id", user.id)
       .maybeSingle();
 
     if (profile?.is_superadmin) {
       redirect("/admin");
+    }
+    if (canUseMatrixTool(false, Boolean(profile?.is_matrix_admin))) {
+      redirect("/matrix");
     }
   }
 
@@ -24,8 +28,8 @@ export default async function Home() {
     <div className="mx-auto flex min-h-[50vh] max-w-lg flex-col justify-center gap-6 px-4">
       <h1 className="text-2xl font-semibold">THP Admin Dashboard</h1>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Sign in with a superadmin Google account to manage users, images, and
-        view captions.
+        Sign in with a Google account that has superadmin or matrix admin access
+        in <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">profiles</code>.
       </p>
       <Link
         href="/login"
