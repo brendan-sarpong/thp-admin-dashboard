@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canUseMatrixTool } from "@/lib/access";
+import { getSupabasePublicEnv } from "@/lib/supabase-env";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { GoogleSignInButton } from "./google-sign-in-button";
 import { LoginSignOutButton } from "./sign-out-button";
@@ -11,6 +12,26 @@ type Props = {
 
 export default async function LoginPage({ searchParams }: Props) {
   const params = await searchParams;
+  const env = getSupabasePublicEnv();
+
+  if (!env.ok) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col justify-center gap-6 px-4">
+        <h1 className="text-2xl font-semibold">Configuration required</h1>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          This deployment is missing{" "}
+          <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">NEXT_PUBLIC_SUPABASE_URL</code>{" "}
+          or{" "}
+          <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>
+          . Add them in the Vercel project → Settings → Environment Variables, then redeploy.
+        </p>
+        <Link href="/" className="text-sm underline">
+          Home
+        </Link>
+      </div>
+    );
+  }
+
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -60,6 +81,11 @@ export default async function LoginPage({ searchParams }: Props) {
       {params.error === "auth" && (
         <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100">
           Sign-in failed. Try again.
+        </p>
+      )}
+      {params.error === "config" && (
+        <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
+          Server configuration error (Supabase env missing on the host).
         </p>
       )}
 

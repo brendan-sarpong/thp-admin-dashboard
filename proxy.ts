@@ -1,14 +1,28 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSupabasePublicEnv } from "@/lib/supabase-env";
 
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const { ok, url, anonKey } = getSupabasePublicEnv();
+
+  if (!ok) {
+    if (path.startsWith("/admin") || path.startsWith("/matrix")) {
+      const u = request.nextUrl.clone();
+      u.pathname = "/";
+      u.searchParams.set("missing_env", "1");
+      return NextResponse.redirect(u);
+    }
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {
@@ -33,12 +47,11 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
   if ((path.startsWith("/admin") || path.startsWith("/matrix")) && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   return supabaseResponse;
